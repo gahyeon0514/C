@@ -6,20 +6,19 @@
     <title>비주얼 노벨 프레임워크 (Visual Novel Engine)</title>
     <!-- Tailwind CSS 로드 -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Google Font: Inter & Nanum Gothic -->
+    <!-- Google Font: Nanum Gothic -->
     <link href="https://fonts.googleapis.com/css2?family=Nanum+Gothic:wght@400;700;800&display=swap" rel="stylesheet">
     <style>
         body {
             font-family: 'Nanum Gothic', sans-serif;
             user-select: none;
         }
-        /* 대사창 페이드인 등 애니메이션 */
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
         }
         .fade-in {
-            animation: fadeIn 0.3s ease-out forwards;
+            animation: fadeIn 0.4s ease-out forwards;
         }
     </style>
 </head>
@@ -39,7 +38,7 @@
         </div>
 
         <!-- 2. 메인 타이틀 화면 (Title Screen) -->
-        <div id="title-screen" class="absolute inset-0 bg-cover bg-center z-40 flex flex-col justify-between p-12 bg-gray-900 hidden" style="background-image: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.8)), url('https://placehold.co/1200x800/111827/4b5563?text=Café+Background');">
+        <div id="title-screen" class="absolute inset-0 bg-cover bg-center z-40 flex flex-col justify-between p-12 bg-gray-900 hidden" style="background-image: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.8)), url('https://placehold.co/1200x800/111827/4b5563?text=Caf%C3%A9+Background');">
             <div class="mt-12">
                 <span id="current-user-badge" class="px-3 py-1 bg-indigo-900 text-indigo-200 text-xs rounded-full font-semibold">계정: 없음</span>
                 <h1 id="game-title" class="text-5xl font-extrabold text-white mt-4 tracking-wider drop-shadow-md">카페: 신의 휴식처</h1>
@@ -54,7 +53,7 @@
         </div>
 
         <!-- 3. 게임 플레이 화면 (Game Play Screen) -->
-        <div id="game-screen" class="absolute inset-0 flex flex-col justify-between hidden bg-cover bg-center transition-all duration-500" style="background-image: url('https://placehold.co/1200x800/1a202c/4a5568?text=Background');">
+        <div id="game-screen" class="absolute inset-0 flex flex-col justify-between hidden bg-cover bg-center transition-all duration-700" style="background-image: url('https://placehold.co/1200x800/1a202c/4a5568?text=Background');">
             
             <!-- 상단 메뉴 및 에피소드 정보 바 -->
             <div class="flex justify-between items-center p-4 bg-gradient-to-b from-black/80 to-transparent z-20">
@@ -86,10 +85,10 @@
 
             <!-- 하단 대사창 영역 -->
             <div class="relative z-25 p-6 bg-gradient-to-t from-black via-black/90 to-transparent pt-16">
-                <div onclick="handleNextClick()" class="max-w-4xl mx-auto bg-gray-900/90 border border-gray-700 rounded-xl p-6 shadow-2xl cursor-pointer min-h-[140px] flex flex-col justify-between backdrop-blur-sm relative">
+                <div onclick="handleNextClick()" class="max-w-4xl mx-auto bg-gray-900/90 border border-gray-700 rounded-xl p-6 shadow-2xl cursor-pointer min-h-[140px] flex flex-col justify-between backdrop-blur-sm relative fade-in">
                     <!-- 화자 이름표 -->
                     <div class="absolute -top-4 left-6 bg-indigo-600 text-white px-4 py-1 rounded-md text-sm font-bold shadow-md" id="speaker-name">
-                        화자 이름
+                        내용
                     </div>
                     <!-- 대사 텍스트 -->
                     <div class="text-gray-100 text-lg leading-relaxed mt-2" id="dialogue-text">
@@ -105,7 +104,6 @@
 
         <!-- 4. 모달창 시스템 (저장/불러오기/로그/설정/엔딩갤러리) -->
         <div id="modal-overlay" class="absolute inset-0 bg-black/80 z-50 flex items-center justify-center p-6 hidden">
-            <!-- 모달 내부 컨텐츠는 JS로 동적 렌더링 -->
             <div id="modal-content" class="bg-gray-900 border border-gray-700 w-full max-w-2xl rounded-xl p-6 shadow-2xl flex flex-col max-h-[85vh]">
                 <!-- 동적 폼 -->
             </div>
@@ -121,25 +119,29 @@
     <script>
         /* ==========================================================================
            [콘텐츠 데이터 관리 영역] 
-           사용자는 아래의 데이터를 직접 수정, 추가, 확장할 수 있습니다.
-           시스템 코드를 건드리지 않고 아래 설정들만 조작하면 됩니다.
+           사용자가 직접 수정, 추가, 확장할 수 있는 독립적 설정 영역입니다.
            ========================================================================== */
 
         // 1. 에피소드 정의
         const EPISODES = {
-            "prologue": { id: "prologue", name: "프롤로그: 구인 전단지", startScene: "scene_01" },
-            "episode_1": { id: "episode_1", name: "에피소드 1: 첫 번째 손님", startScene: "scene_100" }
+            "prologue": { id: "prologue", name: "프롤로그: 전단지와 빛", startScene: "scene_prologue_1" },
+            "episode_1": { id: "episode_1", name: "에피소드 1: 카페의 문을 열며", startScene: "scene_cafe_enter" }
         };
 
-        // 2. 배경 이미지 정의 (경로 또는 파일명 직접 수정 가능)
+        // 2. 배경 이미지 정의 (assets/backgrounds/ 경로 구조 반영)
         const BACKGROUNDS = {
-            "street_day": "https://placehold.co/1200x800/2d3748/a0aec0?text=Street+-+Day",
-            "cafe_interior": "https://placehold.co/1200x800/1a202c/cbd5e0?text=Cafe+Interior",
-            "cafe_night": "https://placehold.co/1200x800/0f172a/94a3b8?text=Cafe+-+Night"
+            "street_pole": "https://placehold.co/1200x800/1e293b/94a3b8?text=Street+-+Pole+with+Flyer",
+            "street_night": "https://placehold.co/1200x800/0f172a/64748b?text=Street+-+Crossroad+Light",
+            "cafe_interior": "https://placehold.co/1200x800/1a202c/cbd5e0?text=Cafe+Interior"
         };
 
-        // 3. 캐릭터 정의 (이름, 이미지, 표정 목록, 크기 등 설정)
+        // 3. 캐릭터 정의 (assets/characters/ 경로 구조 반영)
         const CHARACTERS = {
+            "narrator": {
+                name: "독백 / 해설",
+                expressions: { default: "" },
+                position: "none"
+            },
             "protagonist": {
                 name: "주인공",
                 expressions: {
@@ -155,114 +157,92 @@
                     smile: "https://placehold.co/300x600/7c3aed/ffffff?text=God+Owner+(Smile)"
                 },
                 position: "right"
-            },
-            "customer_1": {
-                name: "지친 방랑자",
-                expressions: {
-                    default: "https://placehold.co/300x600/ef4444/ffffff?text=Customer",
-                    sad: "https://placehold.co/300x600/dc2626/ffffff?text=Customer+(Sad)"
-                },
-                position: "right"
             }
         };
 
         // 4. 스토리 장면(Scene) 및 대화 데이터 
-        // 각 장면은 고유 ID를 가 가지며, 대사 배열(dialogues)과 선택지(choices)를 포함합니다.
         const SCENES = {
-            "scene_01": {
+            "scene_prologue_1": {
                 episode: "prologue",
-                background: "street_day",
+                background: "street_pole",
                 dialogues: [
-                    { speaker: "protagonist", expression: "default", text: "구인 전단지에는 적혀 있었다. '모든 고민을 해결해주는 작은 카페, 직원 급구.'" },
-                    { speaker: "protagonist", expression: "default", text: "설마 신이 직접 운영하는 카페일 줄이야. 호기심 반, 의심 반으로 문을 열었다." }
+                    { speaker: "narrator", expression: "default", text: "난 어느 길목의 전봇대에 붙어 있는 구인 전단지 하나를 보았다." },
+                    { speaker: "narrator", expression: "default", text: "비에도, 바람에도 거뜬히 버틴 녀석은 금방이라도 찢어질 듯 낡아 있었다." },
+                    { speaker: "narrator", expression: "default", text: "‘모든 고민을 해결해주는 작은 카페, 직원 급구!’" },
+                    { speaker: "narrator", expression: "default", text: "가게 이름도, 연락처도, 그 흔한 구인 조건조차 없었다. 딱, 그 한 문장뿐이었다." },
+                    { speaker: "narrator", expression: "default", text: "이상한 전단지였다." },
+                    { speaker: "narrator", expression: "default", text: "그런데도 며칠이고, 몇 날이고 그 자리에 붙어 있었다." },
+                    { speaker: "narrator", expression: "default", text: "비가 내린 뒤에도, 바람이 세차게 불고 난 뒤에도 사라지지 않았다." },
+                    { speaker: "narrator", expression: "default", text: "나는 문득문득 그 전단지를 떠올리곤 했다." },
+                    { speaker: "narrator", expression: "default", text: "대체 어떤 카페이기에, ‘모든 고민을 해결해준다’는 말을 이렇게 당당하게 적어놓은 걸까." },
+                    { speaker: "narrator", expression: "default", text: "그 생각이 들 때마다, 이상하게도 조금씩 호기심이 생겼다." }
                 ],
-                nextScene: "scene_02"
+                nextScene: "scene_prologue_2"
             },
-            "scene_02": {
+            "scene_prologue_2": {
                 episode: "prologue",
-                background: "cafe_interior",
+                background: "street_night", // 사진 변경 연출
                 dialogues: [
-                    { speaker: "god_cafe_owner", expression: "default", text: "어서 오게. 면접 보러 온 친구인가?" },
-                    { speaker: "god_cafe_owner", expression: "smile", text: "이곳에서는 세상의 아픔과 결핍을 마주하게 될 걸네. 자, 어떻게 하겠나?" }
+                    { speaker: "narrator", expression: "default", text: "어느날은 문득 호기심이 들었다. 혹시 전단지의 뒷면에 무언가 남아 있지는 않을까?" },
+                    { speaker: "narrator", expression: "default", text: "나는 전단지를 벽에서 떼어냈다. 그리고 그 순간이었다." },
+                    { speaker: "narrator", expression: "default", text: "건널목 건너편, 작은 가게 하나가 눈에 들어왔다." },
+                    { speaker: "narrator", expression: "default", text: "따뜻한 햇볕을 그대로 옮겨놓은 듯한 빛이 가게 안에서 흘러나오고 있었다." },
+                    { speaker: "narrator", expression: "default", text: "내가 지금껏 눈치채지 못했다기에는, 그 빛은 지나치게 선명했다. 마치 전단지를 떼어내는 순간에야 비로소 모습을 드러낸 것처럼." },
+                    { speaker: "narrator", expression: "default", text: "나는 손에 쥔 전단지를 다시 바라보았다." },
+                    { speaker: "narrator", expression: "default", text: "그리고 어쩌면, 이 전단지가 나를 이곳으로 이끌어온 것은 아닐까 하고 생각했다." }
                 ],
-                // 선택지 정의 (선택시 특정 장면 ID로 이동)
-                choices: [
-                    { text: "직원으로 일하겠습니다.", nextScene: "scene_hire_yes" },
-                    { text: "정체가 뭡니까? 돌아가겠습니다.", nextScene: "scene_hire_no" }
-                ]
+                nextScene: "scene_cafe_enter"
             },
-            "scene_hire_yes": {
-                episode: "prologue",
-                background: "cafe_interior",
-                dialogues: [
-                    { speaker: "god_cafe_owner", expression: "smile", text: "훌륭한 대답이야. 오늘부터 너는 이 카페의 직원이다." },
-                    { speaker: "protagonist", expression: "surprised", text: "이렇게 쉽게 채용되다니... 앞으로 어떤 일이 벌어질까?" }
-                ],
-                nextScene: "scene_prologue_end"
-            },
-            "scene_hire_no": {
-                episode: "prologue",
-                background: "street_day",
-                dialogues: [
-                    { speaker: "protagonist", expression: "default", text: "너무 수상하다. 나는 뒤돌아 카페를 나왔다." }
-                ],
-                nextScene: "ending_coward"
-            },
-            "scene_prologue_end": {
-                episode: "prologue",
-                background: "cafe_interior",
-                dialogues: [
-                    { speaker: "god_cafe_owner", expression: "default", text: "자, 프롤로그가 끝났네. 이제 첫 번째 손님이 찾아올 시간이야." }
-                ],
-                nextScene: "scene_100"
-            },
-            // 에피소드 1 영역
-            "scene_100": {
+            "scene_cafe_enter": {
                 episode: "episode_1",
-                background: "cafe_night",
+                background: "cafe_interior",
                 dialogues: [
-                    { speaker: "customer_1", expression: "sad", text: "실례합니다... 문 열었나요? 마음이 너무 허전해서 찾아왔습니다." },
-                    { speaker: "protagonist", expression: "default", text: "손님이 들어왔다. 첫 번째 업무를 시작할 차례다." }
+                    { speaker: "protagonist", expression: "default", text: "조심스럽게 문을 열고 안으로 들어섰다." },
+                    { speaker: "god_cafe_owner", expression: "smile", text: "어서 오렴. 기다리고 있었단다." }
                 ],
                 choices: [
-                    { text: "따뜻한 차를 내어주며 이야기를 들어준다.", nextScene: "ending_healer" },
-                    { text: "조용히 자리를 권하며 침묵을 지킨다.", nextScene: "ending_listener" }
+                    { text: "여기가 직원 구인한다던 그 카페인가요?", nextScene: "scene_choice_a" },
+                    { text: "직원 구인 건으로 찾아왔습니다.", nextScene: "scene_choice_b" }
                 ]
+            },
+            "scene_choice_a": {
+                episode: "episode_1",
+                background: "cafe_interior",
+                dialogues: [
+                    { speaker: "god_cafe_owner", expression: "default", text: "그렇단다. 마침내 이 문을 열고 들어와" }
+                ],
+                nextScene: "ending_first_step"
+            },
+            "scene_choice_b": {
+                episode: "episode_1",
+                background: "cafe_interior",
+                dialogues: [
+                    { speaker: "god_cafe_owner", expression: "smile", text: "하하, 성급하긴. 하지만 그 패기는 마음에 드는군요." }
+                ],
+                nextScene: "ending_first_step"
             }
         };
 
-        // 5. 엔딩 정의 (엔딩 갤러리 연동 및 조건)
+        // 5. 엔딩 정의
         const ENDINGS = {
-            "ending_coward": {
-                id: "ending_coward",
-                title: "엔딩 1: 일상으로의 도주",
-                description: "신과의 만남을 뒤로하고 평범한 일상으로 돌아갔다."
-            },
-            "ending_healer": {
-                id: "ending_healer",
-                title: "엔딩 2: 마음을 치유하는 바리스타",
-                description: "손님의 상픔을 공감하고 따뜻하게 보듬어준 첫 번째 기록."
-            },
-            "ending_listener": {
-                id: "ending_listener",
-                title: "엔딩 3: 침묵 속의 위로",
-                description: "말없이 곁을 지켜주는 것만으로도 깊은 위안을 주었다."
+            "ending_first_step": {
+                id: "ending_first_step",
+                title: "엔딩 1: 신비로운 만남의 시작",
+                description: "전단지에 이끌려 신의 카페에 첫발을 내디뎠다."
             }
         };
 
         /* ==========================================================================
            [게임 시스템 코어 엔진 영역]
-           아래 코드는 UI와 데이터 흐름을 처리하는 엔진입니다.
            ========================================================================== */
 
-        // 게임 상태 변수
         let currentUser = null;
         let currentGameState = {
-            currentSceneId: "scene_01",
+            currentSceneId: "scene_prologue_1",
             currentEpisodeId: "prologue",
             dialogueIndex: 0,
             unlockedEndings: [],
-            history: [] // 대화 로그용
+            history: []
         };
 
         let gameSettings = {
@@ -273,9 +253,7 @@
         };
 
         let autoPlayTimer = null;
-        let isTyping = false;
 
-        // 로그인 처리
         function handleLogin() {
             const input = document.getElementById("username-input").value.trim();
             if (!input) {
@@ -286,11 +264,9 @@
             document.getElementById("current-user-badge").innerText = `계정: ${currentUser}`;
             document.getElementById("login-screen").classList.add("hidden");
             document.getElementById("title-screen").classList.remove("hidden");
-            loadUserSettings();
             loadProgressFromStorage();
         }
 
-        // 게임 시작 (처음부터)
         function startGame() {
             currentGameState = {
                 currentSceneId: EPISODES["prologue"].startScene,
@@ -302,7 +278,6 @@
             enterScene(currentGameState.currentSceneId);
         }
 
-        // 장면 진입
         function enterScene(sceneId) {
             const scene = SCENES[sceneId];
             if (!scene) {
@@ -310,7 +285,6 @@
                 return;
             }
 
-            // 엔딩 체크인지 확인
             if (ENDINGS[sceneId]) {
                 triggerEnding(sceneId);
                 return;
@@ -320,16 +294,13 @@
             currentGameState.currentEpisodeId = scene.episode || "prologue";
             currentGameState.dialogueIndex = 0;
 
-            // 화면 전환
             document.getElementById("title-screen").classList.add("hidden");
             document.getElementById("game-screen").classList.remove("hidden");
             document.getElementById("choices-container").classList.add("hidden");
 
-            // 배경 설정
             const bgUrl = BACKGROUNDS[scene.background] || BACKGROUNDS["cafe_interior"];
             document.getElementById("game-screen").style.backgroundImage = `url('${bgUrl}')`;
 
-            // 에피소드 및 씬 이름 업데이트
             const epInfo = EPISODES[currentGameState.currentEpisodeId];
             document.getElementById("ui-episode-name").innerText = epInfo ? epInfo.name : "스토리";
             document.getElementById("ui-scene-id").innerText = sceneId;
@@ -338,7 +309,6 @@
             autoSaveGame();
         }
 
-        // 현재 대사 렌더링
         function renderCurrentDialogue() {
             const scene = SCENES[currentGameState.currentSceneId];
             if (!scene) return;
@@ -347,7 +317,6 @@
             const idx = currentGameState.dialogueIndex;
 
             if (idx >= dialogues.length) {
-                // 대사가 끝났을 때 처리
                 if (scene.choices && scene.choices.length > 0) {
                     showChoices(scene.choices);
                 } else if (scene.nextScene) {
@@ -359,16 +328,19 @@
             }
 
             const currentDlg = dialogues[idx];
-            
-            // 화자 이름 매핑
             const charInfo = CHARACTERS[currentDlg.speaker];
             const speakerName = charInfo ? charInfo.name : currentDlg.speaker;
-            document.getElementById("speaker-name").innerText = speakerName;
+            
+            const speakerBadge = document.getElementById("speaker-name");
+            if (currentDlg.speaker === "narrator") {
+                speakerBadge.style.display = "none";
+            } else {
+                speakerBadge.style.display = "block";
+                speakerBadge.innerText = speakerName;
+            }
 
-            // 캐릭터 이미지 렌더링
             renderCharacters(currentDlg.speaker, currentDlg.expression);
 
-            // 대사 출력 및 로그 추가
             document.getElementById("dialogue-text").innerText = currentDlg.text;
             currentGameState.history.push({
                 speaker: speakerName,
@@ -376,16 +348,19 @@
             });
         }
 
-        // 캐릭터 이미지 표시
         function renderCharacters(activeSpeakerKey, expressionKey) {
             const container = document.getElementById("character-container");
             container.innerHTML = "";
 
-            // 현재 장면에 등장하는 캐릭터 표시 (심플하게 화자 강조 및 반대편 배치 지원)
+            if (activeSpeakerKey === "narrator" || !CHARACTERS[activeSpeakerKey] || CHARACTERS[activeSpeakerKey].position === "none") {
+                return;
+            }
+
             for (let key in CHARACTERS) {
                 if (key === activeSpeakerKey) {
                     const charData = CHARACTERS[key];
                     const imgUrl = charData.expressions[expressionKey] || charData.expressions["default"];
+                    if (!imgUrl) continue;
                     
                     const wrapper = document.createElement("div");
                     wrapper.className = "flex flex-col items-center transition-all duration-300 transform scale-105 filter drop-shadow-[0_10px_10px_rgba(0,0,0,0.8)]";
@@ -397,7 +372,6 @@
             }
         }
 
-        // 다음 대사 클릭
         function handleNextClick() {
             const scene = SCENES[currentGameState.currentSceneId];
             if (!scene) return;
@@ -407,7 +381,6 @@
                 renderCurrentDialogue();
             } else {
                 if (scene.choices && scene.choices.length > 0) {
-                    // 선택지가 있으면 선택지창 표시
                     showChoices(scene.choices);
                 } else if (scene.nextScene) {
                     enterScene(scene.nextScene);
@@ -415,7 +388,6 @@
             }
         }
 
-        // 선택지 표시
         function showChoices(choices) {
             const container = document.getElementById("choices-container");
             container.innerHTML = `
@@ -438,7 +410,6 @@
             container.classList.remove("hidden");
         }
 
-        // 엔딩 트리거
         function triggerEnding(endingId) {
             const ending = ENDINGS[endingId];
             if (!ending) return;
@@ -453,7 +424,6 @@
             autoSaveGame();
         }
 
-        // 자동 진행 토글
         function toggleAutoPlay() {
             gameSettings.autoPlay = !gameSettings.autoPlay;
             const btn = document.getElementById("auto-btn");
@@ -477,10 +447,9 @@
                         handleNextClick();
                     }
                 }
-            }, 3000);
+            }, 3500);
         }
 
-        // 세이브 / 로드 시스템 (로컬 스토리지 기반 및 계정 분리 구조)
         function getStorageKey() {
             return `visual_novel_save_${currentUser || 'default'}`;
         }
@@ -502,7 +471,7 @@
             };
             localStorage.setItem(getStorageKey() + `_slot_${slotIndex}`, JSON.stringify(saveData));
             showToast(`슬롯 ${slotIndex}에 저장되었습니다.`);
-            openSaveModal(); // 모달 갱신
+            openSaveModal();
         }
 
         function loadGameSlot(slotKey) {
@@ -531,7 +500,6 @@
             }
         }
 
-        // 모달창 오픈 함수들 (저장, 불러오기, 로그, 설정, 엔딩 갤러리)
         function openSaveModal() {
             const modal = document.getElementById("modal-overlay");
             const content = document.getElementById("modal-content");
@@ -573,7 +541,6 @@
             const content = document.getElementById("modal-content");
             
             let slotsHtml = "";
-            // 오토세이브 슬롯 포함
             const autoKey = getStorageKey() + "_auto";
             const autoData = localStorage.getItem(autoKey);
             let autoInfo = "기록 없음";
@@ -707,16 +674,11 @@
             document.getElementById("modal-overlay").classList.add("hidden");
         }
 
-        function loadUserSettings() {
-            // 사용자 설정 로드 로직 (필요시 구현)
-        }
-
         function returnToTitle() {
             document.getElementById("game-screen").classList.add("hidden");
             document.getElementById("title-screen").classList.remove("hidden");
         }
 
-        // 알림 토스트 메시지
         function showToast(msg) {
             const toast = document.getElementById("message-box");
             toast.innerText = msg;
